@@ -1,6 +1,6 @@
 # Youtube API Server
 ## Overview 
-This launches a golang server that can fetch videos using youtube-api and stores the results in a database(mysql) .
+This launches a golang server locally that can fetch videos using youtube-api and stores the results in a database(mysql) .
 
 ## Examples
 ### Searching Video 
