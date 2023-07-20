@@ -3,22 +3,17 @@ package controllers
 import (
 	"context"
 	"flag"
+	"net/http"
+	"strconv"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/rimo10/youtube-api-server/src/config"
 	"github.com/rimo10/youtube-api-server/src/credentials"
 	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
-	"log"
-	"strconv"
 )
 
 var developerKey = credentials.API_KEY
-
-func handleError(err error, str string) {
-	if err != nil {
-		log.Fatal(str)
-	}
-}
 
 func Search(c *fiber.Ctx) error {
 	flag.Parse()
@@ -28,12 +23,16 @@ func Search(c *fiber.Ctx) error {
 	counts, err := strconv.ParseInt(c.Query("count", ""), 10, 64)
 
 	if err != nil {
-		return c.JSON("Incorrect query")
+		return c.Status(http.StatusBadRequest).JSON(map[string]string{
+			"error": "unable to fetch results for your given query. Make sure to type the correct query",
+		})
 	}
 
 	service, err := youtube.NewService(ctx, option.WithAPIKey(developerKey))
 	if err != nil {
-		log.Fatalf("Error creating new YouTube client: %v", err)
+		return c.Status(http.StatusBadRequest).JSON(map[string]string{
+			"error": "error in fetching data from the api",
+		})
 	}
 
 	// Make the API call to YouTube.
@@ -41,8 +40,11 @@ func Search(c *fiber.Ctx) error {
 		Q(query).
 		MaxResults(counts)
 	response, err := call.Do()
-	handleError(err, "Unable to fetch data from api")
-
+	if err != nil {
+		return c.Status(http.StatusBadRequest).JSON(map[string]string{
+			"error": "your query was accepted but api couldn't fetch the data",
+		})
+	}
 	queryResponse := make([]*config.Searchapi, 0)
 
 	for _, item := range response.Items {
@@ -61,8 +63,9 @@ func Search(c *fiber.Ctx) error {
 
 	for _, item := range queryResponse {
 		if err := config.Database.Create(item).Error; err != nil {
-			handleError(err, "Unable to add to database")
-			return err
+			return c.Status(http.StatusBadRequest).JSON(map[string]string{
+				"error": "unable to add item to the database",
+			})
 		}
 	}
 

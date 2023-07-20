@@ -3,8 +3,9 @@ package controllers
 import (
 	"flag"
 	"github.com/gofiber/fiber/v2"
-	"strconv"
 	"github.com/rimo10/youtube-api-server/src/config"
+	"net/http"
+	"strconv"
 )
 
 var searchResults []config.Searchapi
@@ -16,11 +17,19 @@ func Get(c *fiber.Ctx) error {
 	counts, err := strconv.ParseInt(c.Query("count", ""), 10, 64)
 
 	if err != nil {
-		return c.JSON("Incorrect query")
+		return c.Status(http.StatusBadRequest).JSON(map[string]string{
+			"error": "unable to parse query",
+		})
 	}
 
 	getresponse := make([]*config.Searchapi, 0)
 	config.Database.Where("query = ?", query).Find(&getresponse)
+
+	if len(getresponse) == 0 {
+		return c.Status(http.StatusBadRequest).JSON(map[string]string{
+			"error": "your given query item was not found in the database",
+		})
+	}
 
 	response := make([]struct {
 		VideoId     string `json:"VideoId"`
