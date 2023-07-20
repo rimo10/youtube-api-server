@@ -10,7 +10,7 @@ This launches a golang server locally that can fetch videos using youtube-api an
 ![Alt text](assets/search.png)
 
 ### Fetching Videos
-` http://localhost:3000/api/_videos?query=<YOUR_QUERY>&count=<ITEM_COUNT> `
+` http://localhost:3000/api/get_videos?query=<YOUR_QUERY>&count=<ITEM_COUNT> `
 <br>
 <br>
 ![Alt text](assets/get.png)
