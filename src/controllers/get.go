@@ -27,7 +27,7 @@ func Get(c *fiber.Ctx) error {
 
 	if len(getresponse) == 0 {
 		return c.Status(http.StatusBadRequest).JSON(map[string]string{
-			"error": "your given query item was not found in the database",
+			"error": "query item not found in the database",
 		})
 	}
 

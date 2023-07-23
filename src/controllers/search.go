@@ -3,14 +3,13 @@ package controllers
 import (
 	"context"
 	"flag"
-	"net/http"
-	"strconv"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/rimo10/youtube-api-server/src/config"
 	"github.com/rimo10/youtube-api-server/src/credentials"
 	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
+	"net/http"
+	"strconv"
 )
 
 var developerKey = credentials.API_KEY
@@ -62,10 +61,34 @@ func Search(c *fiber.Ctx) error {
 	}
 
 	for _, item := range queryResponse {
-		if err := config.Database.Create(item).Error; err != nil {
-			return c.Status(http.StatusBadRequest).JSON(map[string]string{
-				"error": "unable to add item to the database",
-			})
+
+		var existingItem config.Searchapi
+		// if etag has changed for a video then update it in the database
+		if err := config.Database.Where("etag = ?", item.Etag).First(&existingItem).Error; err == nil {
+
+			updates := map[string]interface{}{
+				"Query":       query,
+				"Etag":        item.Etag,
+				"VideoId":     item.VideoId,
+				"Title":       item.Title,
+				"Description": item.Description,
+				"ChannelId":   item.ChannelId,
+				"ChannelName": item.ChannelName,
+				"PublishedAt": item.PublishedAt,
+			}
+
+			if err := config.Database.Model(&existingItem).Updates(updates).Error; err != nil {
+				return c.Status(http.StatusBadRequest).JSON(map[string]string{
+					"error": "there was a problem in modifying existing changes",
+				})
+			}
+		} else {
+			// if etag does not exist then create a new record in the database
+			if err := config.Database.Create(item).Error; err != nil {
+				return c.Status(http.StatusBadRequest).JSON(map[string]string{
+					"error": "unable to add item to the database",
+				})
+			}
 		}
 	}
 
