@@ -1,8 +1,8 @@
 package config
 
 import (
-	"github.com/jinzhu/gorm"
 	"github.com/rimo10/youtube-api-server/db"
+	"gorm.io/gorm"
 )
 
 var Database *gorm.DB
